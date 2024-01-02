@@ -4,70 +4,69 @@ const stripe = require('stripe')('sk_test_4eC39HqLyjWDarjtT1zdp7dc');
 
 const resolvers = {
   Query: {
-     getSingleUser: async function ({ user = null, params }, res) {
+     getSingleUser: async function (parent, args, context) {
       const foundUser = await User.findOne({
-        $or: [{ _id: user ? user._id : params.id }, { username: params.username }],
+        $or: [{ username: args.username }],
       });
   
       if (!foundUser) {
-        return res.status(400).json({ message: 'Cannot find a user with this id!' });
-      }
+        return AuthenticationError 
+       }
   
-      res.json(foundUser);
+      return (foundUser);
     },
   
   },
   Mutation: {
-    createUser: async function ({ body }, res) {
-      const user = await User.create(body);
+    createUser: async function (parent, args, context) {
+      const user = await User.create(args);
   
       if (!user) {
-        return res.status(400).json({ message: 'Something is wrong!' });
+        return  AuthenticationError;
       }
       const token = signToken(user);
-      res.json({ token, user });
+      return ({ token, user });
     },
 
-    login: async function ({ body }, res) {
-      const user = await User.findOne({ $or: [{ username: body.username }, { email: body.email }] });
+    login: async function (parent, args, context) {
+      const user = await User.findOne({ $or: [{ username: args.username }, { email: args.email }] });
       if (!user) {
-        return res.status(400).json({ message: "Can't find this user" });
+        return AuthenticationError;
       }
   
-      const correctPw = await user.isCorrectPassword(body.password);
+      const correctPw = await user.isCorrectPassword(args.password);
   
       if (!correctPw) {
-        return res.status(400).json({ message: 'Wrong password!' });
+        return AuthenticationError;
       }
       const token = signToken(user);
-      res.json({ token, user });
+      return ({ token, user });
     },
 
-    saveBook: async function ({ user, body }, res) {
-      console.log(user);
+    saveBook: async function (parent, args, context) {
       try {
         const updatedUser = await User.findOneAndUpdate(
-          { _id: user._id },
-          { $addToSet: { savedBooks: body } },
+          { _id: context.user._id },
+          { $addToSet: { savedBooks: args } },
           { new: true, runValidators: true }
         );
-        return res.json(updatedUser);
+        return (updatedUser);
       } catch (err) {
         console.log(err);
-        return res.status(400).json(err);
+        return AuthenticationError;
       }
     },
 
-    deleteBook: async function ({ user, params }, res) {
+    deleteBook: async function (parent, args, context) {
       const updatedUser = await User.findOneAndUpdate(
-        { _id: user._id },
-        { $pull: { savedBooks: { bookId: params.bookId } } },
+        { _id: context.user._id },
+        { $pull: { savedBooks: { bookId: args.bookId } } },
         { new: true }
       );
       if (!updatedUser) {
-        return res.status(404).json({ message: "Couldn't find user with this id!" });
+        return AuthenticationError;
       }
-      return res.json(updatedUser);
+      return (updatedUser);
     },
   
   
