@@ -2,8 +2,8 @@ const typeDefs = `
 
   type Book {
     authors: [String]
-    description: String
-    bookId: String
+    description: String!
+    bookId: ID!
     image: String
     link: String
     title: String
@@ -15,6 +15,16 @@ const typeDefs = `
     password: String
     savedBooks:[Book]
   }
+
+  input BookInput {
+    authors: [String]
+    description: String!
+    bookId: String!
+    image: String
+    link: String
+    title: String!
+  }
+
 
   type Auth {
     token: String
